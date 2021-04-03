@@ -1,6 +1,7 @@
 module Questions where
 
 import Data.List
+import Data.Tree
 import System.Random
 
 -- Problem 1
@@ -192,3 +193,83 @@ myLFSort xss = [y | (_, y) <- sort withCount]
   where
     withLength = fmap (\x -> (length x, x)) xss
     withCount = fmap (\(x, y) -> (myCount x [x | (x, _) <- withLength], y)) withLength
+
+-- Problem 31
+-- (**) Determine whether a given integer number is prime.
+myIsPrime :: Integral a => a -> Bool
+myIsPrime n = length (filter (\x -> n `mod` x == 0) [2 .. n]) == 1
+
+-- Problem 32
+-- (**) Determine the greatest common divisor of two positive integer numbers. Use Euclid's algorithm.
+myGCD :: Int -> Int -> Int
+myGCD x y
+  | x > 0 && y > 0 = maximum $ getDivisors x `intersect` getDivisors y
+  | otherwise = myGCD (abs x) (abs y)
+
+getDivisors :: Int -> [Int]
+getDivisors n = filter (\z -> n `mod` z == 0) [1 .. n]
+
+-- Problem 33
+-- (*) Determine whether two positive integer numbers are coprime. Two numbers are coprime if their greatest common
+-- divisor equals 1.
+myCoPrime :: Int -> Int -> Bool
+myCoPrime x y = myGCD x y == 1
+
+-- Problem 34
+-- (**) Calculate Euler's totient function phi(m).
+myTotient :: Int -> Int
+myTotient m = length $ filter (`myCoPrime` m) [1 .. m]
+
+-- Problem 35
+-- (**) Determine the prime factors of a given positive integer. Construct a flat list containing the prime factors in
+-- ascending order.
+buildNode :: Int -> (Int, [Int])
+buildNode x =
+  if myIsPrime x
+    then (x, [])
+    else (x, [getDivisors x !! 1, x `div` (getDivisors x !! 1)])
+
+myPrimeFactors :: Int -> [Int]
+myPrimeFactors = filter myIsPrime . flatten . unfoldTree buildNode
+
+-- Problem 36
+-- (**) Determine the prime factors of a given positive integer.
+-- Construct a list containing the prime factors and their multiplicity.
+myPrimeFactorsMult :: Int -> [(Int, Int)]
+myPrimeFactorsMult n = countFactor <$> nub factors
+  where
+    countFactor x = (x, myCount x factors)
+    factors = myPrimeFactors n
+
+-- Problem 37
+-- (**) Calculate Euler's totient function phi(m) (improved).
+myITotient :: Int -> Int
+myITotient m = product [(p - 1) * p ^ (c - 1) | (p, c) <- myPrimeFactorsMult m]
+
+-- Problem 39
+-- (*) A list of prime numbers.
+-- Given a range of integers by its lower and upper limit, construct a list of all prime numbers in that range.
+myPrimesR :: Integral a => a -> a -> [a]
+myPrimesR n m = filter myIsPrime [n .. m]
+
+-- Problem 40
+-- (**) Goldbach's conjecture.
+-- Goldbach's conjecture says that every positive even number greater than 2 is the sum of two prime numbers.
+-- Example: 28 = 5 + 23. It is one of the most famous facts in number theory that has not been proved to be correct in
+-- the general case. It has been numerically confirmed up to very large numbers (much larger than we can go with our
+-- Prolog system). Write a predicate to find the two prime numbers that sum up to a given even integer.
+myGoldbach :: Integral b => b -> (b, b)
+myGoldbach n = head [(x, y) | x <- listPrimes, y <- listPrimes, x + y == n]
+  where
+    listPrimes = myPrimesR 0 n
+
+-- Problem 41
+-- (**) Given a range of integers by its lower and upper limit, print a list of all even numbers and their Goldbach
+-- composition.
+-- In most cases, if an even number is written as the sum of two prime numbers, one of them is very small. Very rarely,
+-- the primes are both bigger than say 50. Try to find out how many such cases there are in the range
+myGoldbachList :: Int -> Int -> [(Int, Int)]
+myGoldbachList n m = myGoldbach <$> filter even [n .. m]
+
+myGoldbachList' :: Int -> Int -> Int -> [(Int, Int)]
+myGoldbachList' n m p = filter (\(x, y) -> x > p && y > p) $ myGoldbachList n m
